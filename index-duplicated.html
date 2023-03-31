@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Display a map</title>
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+    <link href="https://unpkg.com/maplibre-gl@3.0.0-pre.4/dist/maplibre-gl.css" rel="stylesheet" />
+    <script src='https://unpkg.com/maplibre-gl@3.0.0-pre.4/dist/maplibre-gl.js'></script>
+    <script>window.maplibregl_latest = maplibregl;</script>
+
+    <script src='./maplibre-gl-dev.js'></script>
+    <style>
+        body { margin: 0; padding: 0; }
+        #map_latest { position: absolute; top: 0; bottom: 50%; width: 100%; border-bottom: 1px solid #000 }
+        #map { position: absolute; top: 50%; bottom: 0; width: 100%; }
+        .version { color: #fff; background-color: #2B2B2BE5; z-index: 1; position: absolute; top: 0; left: 0; padding: 4px 8px; }
+    </style>
+  </head>
+  <body>
+    <div id="map_latest"><span class='version'>
+      <script>document.currentScript.parentNode.textContent = maplibregl_latest.version;</script>
+    </span></div>
+    <div id="map"><span class='version'>Local</span></div>
+    <script>
+        const options = {
+            style: {
+                "name": "MapLibre",
+                "glyphs": "https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf",
+                "layers": [
+                    // {
+                    //     "id": "countries-fill",
+                    //     "type": "fill",
+                    //     'layout': {
+                    //         visibility: 'none'
+                    //     },
+                    //     "paint": {
+                    //         // "fill-color": 'red',
+                    //         // "fill-color": 'hsla(0,62%,37%,30%)',
+                    //         "fill-color": 'hsl(0 62% 37% / 30%)',
+                    //         // "fill-color": [
+                    //         //     'interpolate-lab',
+                    //         //     ['exponential', 1.4],
+                    //         //     ['zoom'],
+                    //         //     1, 'blue',
+                    //         //     2, 'royalblue',
+                    //         //     3, 'cyan',
+                    //         //     4, 'lime',
+                    //         //     5, 'yellow',
+                    //         //     6, 'red',
+                    //         // ],
+                    //         // "fill-color": {
+                    //         //     type: 'exponential',
+                    //         //     colorSpace: 'lab',
+                    //         //     base: 1.4,
+                    //         //     stops: [
+                    //         //         [1, 'blue',],
+                    //         //         [2, 'royalblue',],
+                    //         //         [3, 'cyan',],
+                    //         //         [4, 'lime',],
+                    //         //         [5, 'yellow',],
+                    //         //         [6, 'red',],
+                    //         //     ]
+                    //         // },
+                    //         // "fill-color": {
+                    //         //     type: 'exponential',
+                    //         //     colorSpace: 'lab',
+                    //         //     stops: [[1, 'rgba(0,0,0,1)'], [10, 'rgba(0,255,255,0.8)']]
+                    //         // },
+                    //       },
+                    //     "source": "maplibre",
+                    //     "source-layer": "countries"
+                    // },
+
+                    ...['interpolate', 'interpolate-hcl', 'interpolate-lab'].flatMap(operator => [
+                        {
+                            'id': `line-progress-${operator}-a`,
+                            'type': 'line',
+                            'source': 'local',
+                            'filter': ['all', [ '==', 't', 'a' ], [ '==', 'operator', operator ]],
+                            'paint': {
+                                'line-width': 20,
+                                'line-gradient': [
+                                    operator,
+                                    ['linear'],
+                                    ['line-progress'],
+                                    0, 'blue',
+                                    0.1, 'royalblue',
+                                    0.3, 'cyan',
+                                    0.5, 'lime',
+                                    0.7, 'yellow',
+                                    1, 'red',
+                                ],
+                            },
+                        },
+                        {
+                            'id': `line-progress-${operator}-b`,
+                            'type': 'line',
+                            'source': 'local',
+                            'filter': ['all', [ '==', 't', 'b' ], [ '==', 'operator', operator ]],
+                            'paint': {
+                                'line-width': 20,
+                                'line-gradient': [
+                                    operator,
+                                    ['linear'],
+                                    ['line-progress'],
+                                    0, 'rgba(0, 240, 0, 0)',
+                                    1, 'rgb(22, 73, 22)',
+                                ],
+                            },
+                        },
+                        {
+                            'id': `line-progress-${operator}-c`,
+                            'type': 'line',
+                            'source': 'local',
+                            'filter': ['all', [ '==', 't', 'c' ], [ '==', 'operator', operator ]],
+                            'paint': {
+                                'line-width': 20,
+                                'line-gradient': [
+                                    operator,
+                                    ['linear'],
+                                    ['line-progress'],
+                                    0, 'rgba(255, 0, 0, 0)',
+                                    1, 'rgba(0, 255, 0, 1)',
+                                    // 0, 'rgba(0, 0, 0, 0)',
+                                    // 1, 'rgb(255,255,0)',
+                                ],
+                            },
+                        },
+                    ]),
+                    {
+                        'id': 'test-line-progress-labels',
+                        'type': 'symbol',
+                        'source': 'local',
+                        'layout': {
+                            'text-field': [ 'get', 'operator' ],
+                            'text-anchor': "bottom-left",
+                            'text-offset': [0, -0.8],
+                        },
+                        paint: {
+                            "text-color": '#000',
+                            "text-halo-color": '#fff',
+                            "text-halo-width": 1,
+                        }
+                    },
+                ],
+                "sources": {
+                    "maplibre": {
+                        "url": "https://demotiles.maplibre.org/tiles/tiles.json",
+                        "type": "vector"
+                    },
+                    'local': {
+                        type: 'geojson',
+                        lineMetrics: true,
+                        data: {
+                            type: 'FeatureCollection',
+                            features: [
+                                {
+                                    'type': 'Feature',
+                                    'geometry': { 'type': 'LineString', 'coordinates': [ [ -170, 52 ], [ 170, 52 ] ], },
+                                    'properties': { operator: 'interpolate', t: 'a' },
+                                },
+                                {
+                                    'type': 'Feature',
+                                    'geometry': { 'type': 'LineString', 'coordinates': [ [ -170, 42 ], [ 170, 42 ] ], },
+                                    'properties': { operator: 'interpolate-hcl', t: 'a' },
+                                },
+                                {
+                                    'type': 'Feature',
+                                    'geometry': { 'type': 'LineString', 'coordinates': [ [ -170, 30 ], [ 170, 30 ] ], },
+                                    'properties': { operator: 'interpolate-lab', t: 'a' },
+                                },
+                                {
+                                    'type': 'Feature',
+                                    'geometry': { 'type': 'LineString', 'coordinates': [ [ -170, 14 ], [ 170, 14 ] ], },
+                                    'properties': { operator: 'interpolate', t: 'b' },
+                                },
+                                {
+                                    'type': 'Feature',
+                                    'geometry': { 'type': 'LineString', 'coordinates': [ [ -170, 0 ], [ 170, 0 ] ], },
+                                    'properties': { operator: 'interpolate-hcl', t: 'b' },
+                                },
+                                {
+                                    'type': 'Feature',
+                                    'geometry': { 'type': 'LineString', 'coordinates': [ [ -170, -14 ], [ 170, -14 ] ], },
+                                    'properties': { operator: 'interpolate-lab', t: 'b' },
+                                },
+                                {
+                                    'type': 'Feature',
+                                    'geometry': { 'type': 'LineString', 'coordinates': [ [ -170, -30 ], [ 170, -30 ] ], },
+                                    'properties': { operator: 'interpolate', t: 'c' },
+                                },
+                                {
+                                    'type': 'Feature',
+                                    'geometry': { 'type': 'LineString', 'coordinates': [ [ -170, -42 ], [ 170, -42 ] ], },
+                                    'properties': { operator: 'interpolate-hcl', t: 'c' },
+                                },
+                                {
+                                    'type': 'Feature',
+                                    'geometry': { 'type': 'LineString', 'coordinates': [ [ -170, -52 ], [ 170, -52 ] ], },
+                                    'properties': { operator: 'interpolate-lab', t: 'c' },
+                                },
+                            ]
+                        },
+                    },
+                },
+                "version": 8,
+            },
+            center: [0, 0],
+            zoom: 1,
+        };
+
+        var mapLatest = new maplibregl_latest.Map({ container: 'map_latest', ...options });
+        var map = new maplibregl.Map({ container: 'map', ...options });
+
+        function synchronizeMaps(map1, map2) {
+            map2.jumpTo({ center: map1.getCenter(), zoom: map1.getZoom(), }, { sync: true });
+        }
+        map.on('move', e => !e.sync && synchronizeMaps(map, mapLatest));
+        mapLatest.on('move', e => !e.sync && synchronizeMaps(mapLatest, map));
+    </script>
+
+  </body>
+</html>
