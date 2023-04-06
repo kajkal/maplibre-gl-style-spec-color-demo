@@ -4,219 +4,272 @@
     <meta charset="utf-8" />
     <title>Display a map</title>
     <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+
     <link href="https://unpkg.com/maplibre-gl@3.0.0-pre.4/dist/maplibre-gl.css" rel="stylesheet" />
     <script src='https://unpkg.com/maplibre-gl@3.0.0-pre.4/dist/maplibre-gl.js'></script>
     <script>window.maplibregl_latest = maplibregl;</script>
 
-    <script src='./maplibre-gl.js'></script>
+    <script src='maplibre-gl-colorjsio.js' crossorigin></script>
+    <script>window.maplibregl_with_colorjsio = maplibregl;</script>
+
+    <script src='maplibre-gl-colorstring.js' crossorigin></script>
+    <script>window.maplibregl_with_colorstring = maplibregl;</script>
+
     <style>
         body { margin: 0; padding: 0; }
-        #map_latest { position: absolute; top: 0; bottom: 50%; width: 100%; border-bottom: 1px solid #000 }
-        #map { position: absolute; top: 50%; bottom: 0; width: 100%; }
-        .version { color: #fff; background-color: #2B2B2BE5; z-index: 1; position: absolute; top: 0; left: 0; padding: 4px 8px; }
+        h3 { margin: 0; }
+        #map_top { position: absolute; top: 0; bottom: 50%; width: 100%; border-bottom: 1px solid #000 }
+        #map_bottom { position: absolute; top: 50%; bottom: 0; width: 100%; }
+        select { color: #fff; background-color: #2b2b2bfa; padding: 4px 8px; }
+        .version { z-index: 1; position: absolute; top: 0; left: 0; border-radius: 0 0 6px; }
+        .sidebar-toggle { color: #fff; background-color: #2b2b2bfa; position: absolute; top: 0; right: 0; padding: 6px 12px; border: none; cursor: pointer; }
+        .sidebar { position: absolute; top: 0; right: 0; width: 400px; background-color: #2b2b2bfa; color: #fff; padding: 8px 12px; margin-top: 27px; border: 1px solid #ccc; border-radius: 6px 0 0 6px; overflow: auto; display: flex; flex-direction: column; }
+        .textarea { padding: 6px 12px; margin: 3px 0 12px; border: 1px solid #ccc; border-radius: 3px; white-space: pre-wrap; }
     </style>
   </head>
   <body>
-    <div id="map_latest"><span class='version'>
-      <script>document.currentScript.parentNode.textContent = maplibregl_latest.version;</script>
-    </span></div>
-    <div id="map"><span class='version'>Local</span></div>
+    <div id="map_top">
+      <select class="version" onchange="initializeMap(this.parentNode.id)">
+        <option value="maplibregl_latest" selected><script>document.currentScript.parentNode.textContent = maplibregl_latest.version;</script></option>
+        <option value="maplibregl_with_colorjsio">with colorjs.io</option>
+        <option value="maplibregl_with_colorstring">with color-string</option>
+      </select>
+    </div>
+    <div id="map_bottom">
+      <select class="version" onchange="initializeMap(this.parentNode.id)">
+        <option value="maplibregl_latest"><script>document.currentScript.parentNode.textContent = maplibregl_latest.version;</script></option>
+        <option value="maplibregl_with_colorjsio">with colorjs.io</option>
+        <option value="maplibregl_with_colorstring" selected>with color-string</option>
+      </select>
+    </div>
+    <button class="sidebar-toggle" onclick="this.nextElementSibling.style.visibility = this.nextElementSibling.style.visibility === 'hidden' ? 'visible' : 'hidden'">
+      Styles
+    </button>
+    <div class="sidebar" style="visibility: visible;">
+      <select id="select_example_sets" onchange="handleExampleSetChange(this)" style="margin-bottom: 8px;">
+        <option value="set_1" selected>Example set 1</option>
+        <option value="set_2">Example set 2 - from transparent to dark color</option>
+        <option value="set_3">Example set 3 - from transparent to light color</option>
+        <option value="set_4">Example set 4</option>
+        <option value="set_5">Example set 5</option>
+        <option value="set_6">Example set 6 - black</option>
+      </select>
+      <span>line-gradient A:</span>
+      <pre id="a" class="textarea" contenteditable></pre>
+      <span>line-gradient B:</span>
+      <pre id="b" class="textarea" contenteditable></pre>
+      <span>line-gradient C:</span>
+      <pre id="c" class="textarea" contenteditable></pre>
+    </div>
     <script>
-        const options = {
-            style: {
-                "name": "MapLibre",
-                "glyphs": "https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf",
-                "layers": [
-                    // {
-                    //     "id": "countries-fill",
-                    //     "type": "fill",
-                    //     'layout': {
-                    //         visibility: 'none'
-                    //     },
-                    //     "paint": {
-                    //         // "fill-color": 'red',
-                    //         // "fill-color": 'hsla(0,62%,37%,30%)',
-                    //         "fill-color": 'hsl(0 62% 37% / 30%)',
-                    //         // "fill-color": [
-                    //         //     'interpolate-lab',
-                    //         //     ['exponential', 1.4],
-                    //         //     ['zoom'],
-                    //         //     1, 'blue',
-                    //         //     2, 'royalblue',
-                    //         //     3, 'cyan',
-                    //         //     4, 'lime',
-                    //         //     5, 'yellow',
-                    //         //     6, 'red',
-                    //         // ],
-                    //         // "fill-color": {
-                    //         //     type: 'exponential',
-                    //         //     colorSpace: 'lab',
-                    //         //     base: 1.4,
-                    //         //     stops: [
-                    //         //         [1, 'blue',],
-                    //         //         [2, 'royalblue',],
-                    //         //         [3, 'cyan',],
-                    //         //         [4, 'lime',],
-                    //         //         [5, 'yellow',],
-                    //         //         [6, 'red',],
-                    //         //     ]
-                    //         // },
-                    //         // "fill-color": {
-                    //         //     type: 'exponential',
-                    //         //     colorSpace: 'lab',
-                    //         //     stops: [[1, 'rgba(0,0,0,1)'], [10, 'rgba(0,255,255,0.8)']]
-                    //         // },
-                    //       },
-                    //     "source": "maplibre",
-                    //     "source-layer": "countries"
-                    // },
+        const exampleIds = [ 'a', 'b', 'c' ];
+        const operators = [ 'interpolate', 'interpolate-hcl', 'interpolate-lab' ];
+        const exampleSets = {
+            set_1: {
+                a: `// example from docs
+                    // https://maplibre.org/maplibre-gl-js-docs/example/line-gradient/
+                    0.0, 'blue',
+                    0.1, 'royalblue',
+                    0.3, 'cyan',
+                    0.5, 'lime',
+                    0.7, 'yellow',
+                    1.0, 'red',`,
+                b: `// transparent red to green
+                    0, 'rgba(255, 0, 0, 0)',
+                    1, 'rgba(0, 255, 0, 1)',`,
+                c: `// transparent red to magenta
+                    0, 'rgba(0, 255, 0, 0)',
+                    1, 'rgba(255, 0, 255, 1)',`,
+            },
+            set_2: {
+                a: `// from transparent black to color
+                    0, 'rgba(0, 0, 0, 0)',
+                    1, 'rgb(22, 73, 22)',`,
+                b: `// from transparent white to color
+                    0, 'rgba(255, 255, 255, 0)',
+                    1, 'rgb(22, 73, 22)',`,
+                c: `// from transparent color to color
+                    0, 'rgba(22, 73, 22, 0)',
+                    1, 'rgb(22, 73, 22)',`,
+            },
+            set_3: {
+                a: `// from transparent black to color
+                    0, 'rgba(0, 0, 0, 0)',
+                    1, 'rgb(255, 255, 0)',`,
+                b: `// from transparent white to color
+                    0, 'rgba(255, 255, 255, 0)',
+                    1, 'rgb(255, 255, 0)',`,
+                c: `// from transparent color to color
+                    0, 'rgba(255, 255, 0, 0)',
+                    1, 'rgb(255, 255, 0)',`,
+            },
+            set_4: {
+                a: `0, 'rgba(255, 0, 255, 1)',
+                    1, 'rgba(0, 255, 0, 1)',`,
+                b: `0, 'yellow',
+                    0.3, 'red',
+                    1, 'black'`,
+                c: `0, 'red',
+                    1, 'navy',`,
+            },
+            set_5: {
+                a: `0, 'magenta',
+                    1, 'azure',`,
+                b: `0, 'green',
+                    1, 'yellow',`,
+                c: `0, 'green',
+                    1, 'orange',`,
+            },
+            set_6: {
+                a: `// from transparent black to white
+                    0, 'rgba(0, 0, 0, 0)',
+                    1, 'rgba(255, 255, 255, 1)',`,
+                b: `// from transparent white to black
+                    0, 'rgba(255, 255, 255, 0)',
+                    1, 'rgba(0, 0, 0, 1)',`,
+                c: `// from transparent black to black
+                    0, 'rgba(0, 0, 0, 0)',
+                    1, 'rgba(0, 0, 0, 1)',`,
+            },
+        };
 
-                    ...['interpolate', 'interpolate-hcl', 'interpolate-lab'].flatMap(operator => [
-                        {
-                            'id': `line-progress-${operator}-a`,
-                            'type': 'line',
-                            'source': 'local',
-                            'filter': ['all', [ '==', 't', 'a' ], [ '==', 'operator', operator ]],
-                            'paint': {
+        const options = () => ({
+            style: {
+                name: 'MapLibre',
+                glyphs: 'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf',
+                layers: [
+                    ...exampleIds.flatMap(exampleId => (
+                        operators.map(operator => ({
+                            id: `line-progress-${exampleId}-${operator}`,
+                            type: 'line',
+                            source: 'local',
+                            filter: [
+                                'all',
+                                [ '==', [ 'get', 'exampleId' ], exampleId ],
+                                [ '==', [ 'get', 'operator' ], operator ],
+                            ],
+                            paint: {
                                 'line-width': 20,
                                 'line-gradient': [
                                     operator,
-                                    ['linear'],
-                                    ['line-progress'],
-                                    0, 'blue',
-                                    0.1, 'royalblue',
-                                    0.3, 'cyan',
-                                    0.5, 'lime',
-                                    0.7, 'yellow',
-                                    1, 'red',
+                                    ...parseLineGradient(document.getElementById(exampleId)),
                                 ],
                             },
-                        },
-                        {
-                            'id': `line-progress-${operator}-b`,
-                            'type': 'line',
-                            'source': 'local',
-                            'filter': ['all', [ '==', 't', 'b' ], [ '==', 'operator', operator ]],
-                            'paint': {
-                                'line-width': 20,
-                                'line-gradient': [
-                                    operator,
-                                    ['linear'],
-                                    ['line-progress'],
-                                    0, 'rgba(0, 240, 0, 0)',
-                                    1, 'rgb(22, 73, 22)',
-                                ],
-                            },
-                        },
-                        {
-                            'id': `line-progress-${operator}-c`,
-                            'type': 'line',
-                            'source': 'local',
-                            'filter': ['all', [ '==', 't', 'c' ], [ '==', 'operator', operator ]],
-                            'paint': {
-                                'line-width': 20,
-                                'line-gradient': [
-                                    operator,
-                                    ['linear'],
-                                    ['line-progress'],
-                                    0, 'rgba(255, 0, 0, 0)',
-                                    1, 'rgba(0, 255, 0, 1)',
-                                    // 0, 'rgba(0, 0, 0, 0)',
-                                    // 1, 'rgb(255,255,0)',
-                                ],
-                            },
-                        },
-                    ]),
+                        }))
+                    )),
                     {
-                        'id': 'test-line-progress-labels',
-                        'type': 'symbol',
-                        'source': 'local',
-                        'layout': {
-                            'text-field': [ 'get', 'operator' ],
-                            'text-anchor': "bottom-left",
-                            'text-offset': [0, -0.8],
+                        id: 'test-line-progress-labels',
+                        type: 'symbol',
+                        source: 'local',
+                        layout: {
+                            'text-field': [ 'concat', [ 'upcase', [ 'get', 'exampleId' ] ], ' - ', [ 'get', 'operator' ] ],
+                            'text-anchor': 'bottom-left',
+                            'text-offset': [ 0, -0.8 ],
                         },
                         paint: {
-                            "text-color": '#000',
-                            "text-halo-color": '#fff',
-                            "text-halo-width": 1,
-                        }
+                            'text-color': '#000',
+                            'text-halo-color': '#fff',
+                            'text-halo-width': 1,
+                        },
                     },
                 ],
-                "sources": {
-                    "maplibre": {
-                        "url": "https://demotiles.maplibre.org/tiles/tiles.json",
-                        "type": "vector"
-                    },
-                    'local': {
+                sources: {
+                    local: {
                         type: 'geojson',
                         lineMetrics: true,
                         data: {
                             type: 'FeatureCollection',
                             features: [
-                                {
-                                    'type': 'Feature',
-                                    'geometry': { 'type': 'LineString', 'coordinates': [ [ -170, 52 ], [ 170, 52 ] ], },
-                                    'properties': { operator: 'interpolate', t: 'a' },
-                                },
-                                {
-                                    'type': 'Feature',
-                                    'geometry': { 'type': 'LineString', 'coordinates': [ [ -170, 42 ], [ 170, 42 ] ], },
-                                    'properties': { operator: 'interpolate-hcl', t: 'a' },
-                                },
-                                {
-                                    'type': 'Feature',
-                                    'geometry': { 'type': 'LineString', 'coordinates': [ [ -170, 30 ], [ 170, 30 ] ], },
-                                    'properties': { operator: 'interpolate-lab', t: 'a' },
-                                },
-                                {
-                                    'type': 'Feature',
-                                    'geometry': { 'type': 'LineString', 'coordinates': [ [ -170, 14 ], [ 170, 14 ] ], },
-                                    'properties': { operator: 'interpolate', t: 'b' },
-                                },
-                                {
-                                    'type': 'Feature',
-                                    'geometry': { 'type': 'LineString', 'coordinates': [ [ -170, 0 ], [ 170, 0 ] ], },
-                                    'properties': { operator: 'interpolate-hcl', t: 'b' },
-                                },
-                                {
-                                    'type': 'Feature',
-                                    'geometry': { 'type': 'LineString', 'coordinates': [ [ -170, -14 ], [ 170, -14 ] ], },
-                                    'properties': { operator: 'interpolate-lab', t: 'b' },
-                                },
-                                {
-                                    'type': 'Feature',
-                                    'geometry': { 'type': 'LineString', 'coordinates': [ [ -170, -30 ], [ 170, -30 ] ], },
-                                    'properties': { operator: 'interpolate', t: 'c' },
-                                },
-                                {
-                                    'type': 'Feature',
-                                    'geometry': { 'type': 'LineString', 'coordinates': [ [ -170, -42 ], [ 170, -42 ] ], },
-                                    'properties': { operator: 'interpolate-hcl', t: 'c' },
-                                },
-                                {
-                                    'type': 'Feature',
-                                    'geometry': { 'type': 'LineString', 'coordinates': [ [ -170, -52 ], [ 170, -52 ] ], },
-                                    'properties': { operator: 'interpolate-lab', t: 'c' },
-                                },
-                            ]
+                                { exampleId: 'a', y: [ 52, 42, 30 ] },
+                                { exampleId: 'b', y: [ 14, 0, -14 ] },
+                                { exampleId: 'c', y: [ -30, -42, -52 ] },
+                            ].flatMap(({ exampleId, y }) =>
+                                y.map((y, i) => ({
+                                    type: 'Feature',
+                                    geometry: { type: 'LineString', coordinates: [ [ -170, y ], [ 170, y ] ] },
+                                    properties: { operator: operators[ i ], exampleId },
+                                })),
+                            ),
                         },
                     },
                 },
-                "version": 8,
+                version: 8,
             },
-            center: [0, 0],
-            zoom: 1,
+            center: [ 0, 0 ],
+            zoom: 1.3,
+            minZoom: 1,
+        });
+
+        const maps = {
+            map_top: null,
+            map_bottom: null,
         };
 
-        var mapLatest = new maplibregl_latest.Map({ container: 'map_latest', ...options });
-        var map = new maplibregl.Map({ container: 'map', ...options });
+        function initializeMap(mapId) {
+            const otherMapId = mapId === 'map_top' ? 'map_bottom' : 'map_top';
+            const scriptNameToUse = document.querySelector(`#${mapId} > select`).value;
+            console.log(`initialize '${mapId}' using '${scriptNameToUse}'`);
+            maps[ mapId ]?.remove();
+            maps[ mapId ] = new window[ scriptNameToUse ].Map({ container: mapId, ...options() });
+            maps[ mapId ].on('move', e => !e.ignore && synchronizeMaps(maps[ mapId ], maps[ otherMapId ]));
+            maps[ otherMapId ] && synchronizeMaps(maps[ otherMapId ], maps[ mapId ]);
+        }
 
         function synchronizeMaps(map1, map2) {
-            map2.jumpTo({ center: map1.getCenter(), zoom: map1.getZoom(), }, { sync: true });
+            map2.jumpTo({ center: map1.getCenter(), zoom: map1.getZoom() }, { ignore: true });
         }
-        map.on('move', e => !e.sync && synchronizeMaps(map, mapLatest));
-        mapLatest.on('move', e => !e.sync && synchronizeMaps(mapLatest, map));
+
+        function handleStyleInputChange(styleInput) {
+            const lineGradient = parseLineGradient(styleInput);
+            if (lineGradient) {
+                const exampleId = styleInput.id;
+                console.log(`set new style for example '${exampleId}'`, lineGradient);
+                for (const map of Object.values(maps)) {
+                    for (const operator of operators) {
+                        map?.setPaintProperty(
+                            `line-progress-${exampleId}-${operator}`,
+                            'line-gradient',
+                            [ operator, ...lineGradient ],
+                        );
+                    }
+                }
+            }
+        }
+
+        function parseLineGradient(el) {
+            try {
+                return [
+                    [ 'linear' ],
+                    [ 'line-progress' ],
+                    ...Array
+                        .from(el.childNodes)
+                        .flatMap(el => el.textContent.split('\n'))
+                        .map(l => l.trim())
+                        .filter(l => l && !/^\/\//.test(l))
+                        .map(l => l.replace(/\s*,\s*$/, '').replace(/'/g, '"'))
+                        .flatMap(l => l.split(/\s*,\s*(?=")|(?<=")\s*,\s*/))
+                        .map(l => JSON.parse(l)),
+                ];
+            } catch {
+            }
+        }
+
+        function handleExampleSetChange(selectEl) {
+            const selectedSet = exampleSets[ selectEl.value ];
+            for (const exampleId of exampleIds) {
+                const styleInput = document.getElementById(exampleId);
+                styleInput.textContent = selectedSet[ exampleId ].split('\n').map(l => l.trim()).filter(Boolean).join('\n');
+                handleStyleInputChange(styleInput);
+            }
+        }
+
+        for (const styleInput of document.querySelectorAll('[contenteditable]')) {
+            styleInput.addEventListener('input', handleStyleInputChange.bind(null, styleInput));
+        }
+
+        handleExampleSetChange(document.getElementById('select_example_sets'));
+        initializeMap('map_top');
+        initializeMap('map_bottom');
     </script>
 
   </body>
