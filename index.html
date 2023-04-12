@@ -2,7 +2,7 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <title>Display a map</title>
+    <title>Color changes demo</title>
     <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
 
     <link href="https://unpkg.com/maplibre-gl@3.0.0-pre.4/dist/maplibre-gl.css" rel="stylesheet" />
@@ -31,15 +31,15 @@
     <div id="map_top">
       <select class="version" onchange="initializeMap(this.parentNode.id)">
         <option value="maplibregl_latest" selected><script>document.currentScript.parentNode.textContent = maplibregl_latest.version;</script></option>
-        <option value="maplibregl_with_colorjsio">with colorjs.io</option>
-        <option value="maplibregl_with_colorstring">with color-string</option>
+        <option value="maplibregl_with_colorjsio">with colorjs.io</option> <!-- parsing + interpolation https://github.com/maplibre/maplibre-style-spec/pull/79 -->
+        <option value="maplibregl_with_colorstring">with color-string</option> <!--  parsing + fixed existing interpolation https://github.com/maplibre/maplibre-style-spec/pull/94 -->
       </select>
     </div>
     <div id="map_bottom">
       <select class="version" onchange="initializeMap(this.parentNode.id)">
         <option value="maplibregl_latest"><script>document.currentScript.parentNode.textContent = maplibregl_latest.version;</script></option>
-        <option value="maplibregl_with_colorjsio">with colorjs.io</option>
-        <option value="maplibregl_with_colorstring" selected>with color-string</option>
+        <option value="maplibregl_with_colorjsio">with colorjs.io</option> <!-- parsing + interpolation https://github.com/maplibre/maplibre-style-spec/pull/79 -->
+        <option value="maplibregl_with_colorstring" selected>with color-string</option> <!--  parsing + fixed existing interpolation https://github.com/maplibre/maplibre-style-spec/pull/94 -->
       </select>
     </div>
     <button class="sidebar-toggle" onclick="this.nextElementSibling.style.visibility = this.nextElementSibling.style.visibility === 'hidden' ? 'visible' : 'hidden'">
