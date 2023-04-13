@@ -5,19 +5,23 @@
     <title>Color changes demo</title>
     <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
 
+    <!-- latest official maplibre version -->
     <link href="https://unpkg.com/maplibre-gl@3.0.0-pre.4/dist/maplibre-gl.css" rel="stylesheet" />
     <script src='https://unpkg.com/maplibre-gl@3.0.0-pre.4/dist/maplibre-gl.js'></script>
-    <script>window.maplibregl_latest = maplibregl;</script>
+    <script>window.registeredScripts = [ { script: maplibregl, name: maplibregl.version } ];</script>
 
+    <!-- parsing and color interpolation by `colorjs.io` -->
+    <!-- https://github.com/maplibre/maplibre-style-spec/pull/79 -->
     <script src='maplibre-gl-colorjsio.js' crossorigin></script>
-    <script>window.maplibregl_with_colorjsio = maplibregl;</script>
+    <script>window.registeredScripts.push({ script: maplibregl, name: 'PR #79 colorjs.io' });</script>
 
+    <!-- parsing by `color-string`, fixed existing color interpolation -->
+    <!-- https://github.com/maplibre/maplibre-style-spec/pull/94 -->
     <script src='maplibre-gl-colorstring.js' crossorigin></script>
-    <script>window.maplibregl_with_colorstring = maplibregl;</script>
+    <script>window.registeredScripts.push({ script: maplibregl, name: 'PR #94 color-string' });</script>
 
     <style>
         body { margin: 0; padding: 0; }
-        h3 { margin: 0; }
         #map_top { position: absolute; top: 0; bottom: 50%; width: 100%; border-bottom: 1px solid #000 }
         #map_bottom { position: absolute; top: 50%; bottom: 0; width: 100%; }
         select { color: #fff; background-color: #2b2b2bfa; padding: 4px 8px; }
@@ -29,17 +33,11 @@
   </head>
   <body>
     <div id="map_top">
-      <select class="version" onchange="initializeMap(this.parentNode.id)">
-        <option value="maplibregl_latest" selected><script>document.currentScript.parentNode.textContent = maplibregl_latest.version;</script></option>
-        <option value="maplibregl_with_colorjsio">with colorjs.io</option> <!-- parsing + interpolation https://github.com/maplibre/maplibre-style-spec/pull/79 -->
-        <option value="maplibregl_with_colorstring">with color-string</option> <!--  parsing + fixed existing interpolation https://github.com/maplibre/maplibre-style-spec/pull/94 -->
+      <select class="version" onchange="handleMapLibreScriptChange(this.parentNode.id)">
       </select>
     </div>
     <div id="map_bottom">
-      <select class="version" onchange="initializeMap(this.parentNode.id)">
-        <option value="maplibregl_latest"><script>document.currentScript.parentNode.textContent = maplibregl_latest.version;</script></option>
-        <option value="maplibregl_with_colorjsio">with colorjs.io</option> <!-- parsing + interpolation https://github.com/maplibre/maplibre-style-spec/pull/79 -->
-        <option value="maplibregl_with_colorstring" selected>with color-string</option> <!--  parsing + fixed existing interpolation https://github.com/maplibre/maplibre-style-spec/pull/94 -->
+      <select class="version" onchange="handleMapLibreScriptChange(this.parentNode.id)">
       </select>
     </div>
     <button class="sidebar-toggle" onclick="this.nextElementSibling.style.visibility = this.nextElementSibling.style.visibility === 'hidden' ? 'visible' : 'hidden'">
@@ -47,25 +45,20 @@
     </button>
     <div class="sidebar" style="visibility: visible;">
       <select id="select_example_sets" onchange="handleExampleSetChange(this)" style="margin-bottom: 8px;">
-        <option value="set_1" selected>Example set 1</option>
-        <option value="set_2">Example set 2 - from transparent to dark color</option>
-        <option value="set_3">Example set 3 - from transparent to light color</option>
-        <option value="set_4">Example set 4</option>
-        <option value="set_5">Example set 5</option>
-        <option value="set_6">Example set 6 - black</option>
       </select>
       <span>line-gradient A:</span>
-      <pre id="a" class="textarea" contenteditable></pre>
+      <pre id="a" class="textarea" contenteditable oninput='handleStyleInputChange(this)'></pre>
       <span>line-gradient B:</span>
-      <pre id="b" class="textarea" contenteditable></pre>
+      <pre id="b" class="textarea" contenteditable oninput='handleStyleInputChange(this)'></pre>
       <span>line-gradient C:</span>
-      <pre id="c" class="textarea" contenteditable></pre>
+      <pre id="c" class="textarea" contenteditable oninput='handleStyleInputChange(this)'></pre>
     </div>
     <script>
         const exampleIds = [ 'a', 'b', 'c' ];
         const operators = [ 'interpolate', 'interpolate-hcl', 'interpolate-lab' ];
-        const exampleSets = {
-            set_1: {
+        const exampleSets = [
+            {
+                name: 'Example set 1',
                 a: `// example from docs
                     // https://maplibre.org/maplibre-gl-js-docs/example/line-gradient/
                     0.0, 'blue',
@@ -81,7 +74,8 @@
                     0, 'rgba(0, 255, 0, 0)',
                     1, 'rgba(255, 0, 255, 1)',`,
             },
-            set_2: {
+            {
+                name: 'Example set 2 - from transparent to dark color',
                 a: `// from transparent black to color
                     0, 'rgba(0, 0, 0, 0)',
                     1, 'rgb(22, 73, 22)',`,
@@ -92,7 +86,8 @@
                     0, 'rgba(22, 73, 22, 0)',
                     1, 'rgb(22, 73, 22)',`,
             },
-            set_3: {
+            {
+                name: 'Example set 3 - from transparent to light color',
                 a: `// from transparent black to color
                     0, 'rgba(0, 0, 0, 0)',
                     1, 'rgb(255, 255, 0)',`,
@@ -103,7 +98,8 @@
                     0, 'rgba(255, 255, 0, 0)',
                     1, 'rgb(255, 255, 0)',`,
             },
-            set_4: {
+            {
+                name: 'Example set 4',
                 a: `0, 'rgba(255, 0, 255, 1)',
                     1, 'rgba(0, 255, 0, 1)',`,
                 b: `0, 'yellow',
@@ -112,7 +108,8 @@
                 c: `0, 'red',
                     1, 'navy',`,
             },
-            set_5: {
+            {
+                name: 'Example set 5',
                 a: `0, 'magenta',
                     1, 'azure',`,
                 b: `0, 'green',
@@ -120,7 +117,8 @@
                 c: `0, 'green',
                     1, 'orange',`,
             },
-            set_6: {
+            {
+                name: 'Example set 6 - black',
                 a: `// from transparent black to white
                     0, 'rgba(0, 0, 0, 0)',
                     1, 'rgba(255, 255, 255, 1)',`,
@@ -131,6 +129,11 @@
                     0, 'rgba(0, 0, 0, 0)',
                     1, 'rgba(0, 0, 0, 1)',`,
             },
+        ];
+
+        const maps = {
+            map_top: null,
+            map_bottom: null,
         };
 
         const options = () => ({
@@ -181,7 +184,7 @@
                             type: 'FeatureCollection',
                             features: [
                                 { exampleId: 'a', y: [ 52, 42, 30 ] },
-                                { exampleId: 'b', y: [ 14, 0, -14 ] },
+                                { exampleId: 'b', y: [ 14.5, 0, -14.5 ] },
                                 { exampleId: 'c', y: [ -30, -42, -52 ] },
                             ].flatMap(({ exampleId, y }) =>
                                 y.map((y, i) => ({
@@ -197,26 +200,56 @@
             },
             center: [ 0, 0 ],
             zoom: 1.3,
-            minZoom: 1,
+            minZoom: 0,
         });
 
-        const maps = {
-            map_top: null,
-            map_bottom: null,
-        };
 
-        function initializeMap(mapId) {
+        { // initialize maplibre script version selects
+            const topMapScriptVersionSelect = document.querySelector('#map_top > select');
+            const bottomMapScriptVersionSelect = document.querySelector('#map_bottom > select');
+            for (const [ scriptNo, registeredScript ] of registeredScripts.entries()) {
+                const optionEl = document.createElement('option');
+                optionEl.value = `${scriptNo}`;
+                optionEl.textContent = registeredScript.name;
+                topMapScriptVersionSelect.append(optionEl);
+                bottomMapScriptVersionSelect.append(optionEl.cloneNode(true));
+            }
+            topMapScriptVersionSelect.firstChild.selected = true;
+            bottomMapScriptVersionSelect.lastChild.selected = true;
+        }
+
+        function handleMapLibreScriptChange(mapId) {
             const otherMapId = mapId === 'map_top' ? 'map_bottom' : 'map_top';
-            const scriptNameToUse = document.querySelector(`#${mapId} > select`).value;
-            console.log(`initialize '${mapId}' using '${scriptNameToUse}'`);
+            const scriptToUse = registeredScripts[ document.querySelector(`#${mapId} > select`).value ];
+            console.log(`initialize '${mapId}' using '${scriptToUse.name}'`);
             maps[ mapId ]?.remove();
-            maps[ mapId ] = new window[ scriptNameToUse ].Map({ container: mapId, ...options() });
+            maps[ mapId ] = new scriptToUse.script.Map({ container: mapId, ...options() });
             maps[ mapId ].on('move', e => !e.ignore && synchronizeMaps(maps[ mapId ], maps[ otherMapId ]));
             maps[ otherMapId ] && synchronizeMaps(maps[ otherMapId ], maps[ mapId ]);
         }
 
         function synchronizeMaps(map1, map2) {
             map2.jumpTo({ center: map1.getCenter(), zoom: map1.getZoom() }, { ignore: true });
+        }
+
+
+        { // initialize example sets select
+            const exampleSetSelect = document.querySelector('#select_example_sets');
+            for (const [ exampleSetNo, exampleSet ] of exampleSets.entries()) {
+                const optionEl = document.createElement('option');
+                optionEl.value = `${exampleSetNo}`;
+                optionEl.textContent = exampleSet.name;
+                exampleSetSelect.append(optionEl);
+            }
+        }
+
+        function handleExampleSetChange(selectEl) {
+            const selectedSet = exampleSets[ selectEl.value ];
+            for (const exampleId of exampleIds) {
+                const styleInput = document.getElementById(exampleId);
+                styleInput.textContent = selectedSet[ exampleId ].split('\n').map(l => l.trim()).filter(Boolean).join('\n');
+                handleStyleInputChange(styleInput);
+            }
         }
 
         function handleStyleInputChange(styleInput) {
@@ -246,31 +279,18 @@
                         .flatMap(el => el.textContent.split('\n'))
                         .map(l => l.trim())
                         .filter(l => l && !/^\/\//.test(l))
-                        .map(l => l.replace(/\s*,\s*$/, '').replace(/'/g, '"'))
+                        .map(l => l.replace(/\s*,$/, '').replace(/'/g, '"'))
                         .flatMap(l => l.split(/\s*,\s*(?=")|(?<=")\s*,\s*/))
                         .map(l => JSON.parse(l)),
                 ];
-            } catch {
-            }
+            } catch {}
         }
 
-        function handleExampleSetChange(selectEl) {
-            const selectedSet = exampleSets[ selectEl.value ];
-            for (const exampleId of exampleIds) {
-                const styleInput = document.getElementById(exampleId);
-                styleInput.textContent = selectedSet[ exampleId ].split('\n').map(l => l.trim()).filter(Boolean).join('\n');
-                handleStyleInputChange(styleInput);
-            }
-        }
 
-        for (const styleInput of document.querySelectorAll('[contenteditable]')) {
-            styleInput.addEventListener('input', handleStyleInputChange.bind(null, styleInput));
-        }
-
+        // initialize maps
         handleExampleSetChange(document.getElementById('select_example_sets'));
-        initializeMap('map_top');
-        initializeMap('map_bottom');
+        handleMapLibreScriptChange('map_top');
+        handleMapLibreScriptChange('map_bottom');
     </script>
-
   </body>
 </html>
