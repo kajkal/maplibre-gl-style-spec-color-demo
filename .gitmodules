@@ -1,0 +1,4 @@
+[submodule "maplibre-gl-compare"]
+	path = maplibre-gl-compare
+	url = https://github.com/maplibre/maplibre-gl-compare
+	branch = main
