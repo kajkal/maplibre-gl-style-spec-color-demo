@@ -6,12 +6,12 @@
     <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
     <link href="https://unpkg.com/maplibre-gl@3.0.0-pre.5/dist/maplibre-gl.css" rel="stylesheet" />
 
-    <!-- maplibre version before color changes -->
-    <script src='https://unpkg.com/maplibre-gl@3.0.0-pre.4/dist/maplibre-gl.js'></script>
-    <script>window.registeredScripts = [ { script: maplibregl, name: maplibregl.version } ];</script>
-
     <!-- latest official maplibre version -->
     <script src='https://unpkg.com/maplibre-gl@3.0.0-pre.5/dist/maplibre-gl.js'></script>
+    <script>window.registeredScripts = [ { script: maplibregl, name: maplibregl.version } ];</script>
+
+    <!-- maplibre version before color changes -->
+    <script src='https://unpkg.com/maplibre-gl@3.0.0-pre.4/dist/maplibre-gl.js'></script>
     <script>window.registeredScripts.push({ script: maplibregl, name: maplibregl.version });</script>
 
     <!-- parsing and color interpolation by `colorjs.io` -->
@@ -28,6 +28,12 @@
     <!-- https://github.com/maplibre/maplibre-style-spec/pull/94 -->
     <script src='maplibre-gl-colorstring.js' crossorigin></script>
     <script>window.registeredScripts.push({ script: maplibregl, name: 'PR #94 color-string' });</script>
+
+    <!-- D65 -> D50 -->
+    <!-- https://github.com/maplibre/maplibre-gl-js/issues/2382 -->
+    <!-- https://github.com/felt/maplibre-style-spec/pull/1 -->
+    <script src='maplibre-gl-replace-d65-by-d50.js' crossorigin></script>
+    <script>window.registeredScripts.push({ script: maplibregl, name: 'PR #2382 D65 -> D50' });</script>
 
     <style>
         body { margin: 0; padding: 0; }
