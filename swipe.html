@@ -40,13 +40,18 @@
     <script src="maplibre-gl-compare/dist/maplibre-gl-compare.js"></script>
 
     <style>
+        :root { --top-color: red;--bottom-color: green; }
         body { margin: 0; padding: 0; overflow: hidden; }
         select { color: #fff; background-color: #2b2b2bfa; padding: 4px 8px; }
         .map { position: absolute; top: 0; bottom: 0; width: 100%; }
         .sidebar-toggle { color: #fff; background-color: #2b2b2bfa; position: absolute; top: 0; right: 0; padding: 6px 12px; border: none; cursor: pointer; z-index: 2; }
         .sidebar { position: absolute; top: 0; right: 0; width: 400px; background-color: #2b2b2bfa; color: #fff; padding: 8px 12px; margin-top: 27px; border: 1px solid #ccc; border-radius: 6px 0 0 6px; overflow: auto; display: flex; flex-direction: column; z-index: 2; }
-        .sidebar > label { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+        .sidebar label { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 12px; }
+        .sidebar select { flex-basis: 100%; }
         .textarea { padding: 6px 12px; margin: 3px 0 12px; border: 1px solid #ccc; border-radius: 3px; white-space: pre-wrap; }
+        #map_top { border: 0 solid var(--top-color); border-left-width: 3px; }
+        #map_bottom { border: 0 solid var(--bottom-color); border-left-width: 3px; }
+        .maplibregl-compare-horizontal { height: 0 !important; }
     </style>
   </head>
   <body>
@@ -58,11 +63,11 @@
       Options
     </button>
     <div class="sidebar" style="visibility: visible;">
-      <label>Top:
+      <label><span style="background-color: var(--top-color); width: 1em; height: 1em;"></span>Top:
         <select id="map_top_script" onchange="handleMapLibreScriptChange('map_top')">-->
         </select>
       </label>
-      <label>Bottom:
+      <label><span style="background-color: var(--bottom-color); width: 1em; height: 1em;"></span>Bottom:
         <select id="map_bottom_script" onchange="handleMapLibreScriptChange('map_bottom')">-->
         </select>
       </label>
